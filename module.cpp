@@ -22,10 +22,18 @@ Function *createFunc(IRBuilder<> &Builder, std::string Name) {
 BasicBlock* createBB ( Function *fooFunc, std::string Name ) {
 	return BasicBlock::Create(TheContext, Name, fooFunc);
 }
+GlobalVariable *createGlob ( IRBuilder<> &Builder, std::string Name ) {
+	TheModule->getOrInsertGlobal(Name, Builder.getInt32Ty());
+	GlobalVariable *gvar = TheModule->getNamedGlobal(Name);
+	gvar->setLinkage(GlobalVariable::CommonLinkage);
+	gvar->setAlignment((MaybeAlign)4);
+	return gvar;
+}
 int main ( int argc, char *argv[] )
 {
 	llvm::LLVMContext &Context = TheContext;
 	TheModule = new Module("my compiler", Context);
+	GlobalVariable *gvar = createGlob(Builder, "x");
 	Function *fooFunc = createFunc(Builder, "foo");
 	BasicBlock *entry = createBB(fooFunc, "entry");
 	verifyFunction(*fooFunc);
