@@ -12,6 +12,8 @@ static Module *TheModule;
 static LLVMContext TheContext;
 static IRBuilder<> Builder(TheContext);
 static std::vector<std::string> FunArgs;
+typedef SmallVector<BasicBlock*, 16> BBList;
+typedef SmallVector<Value*, 16> ValList;
 
 Function *createFunc(IRBuilder<> &Builder, std::string Name) {
 	std::vector<Type*> Integers(FunArgs.size(), Type::getInt32Ty(TheContext));
@@ -41,6 +43,31 @@ GlobalVariable *createGlob ( IRBuilder<> &Builder, std::string Name ) {
 Value* createArith ( IRBuilder<> &Builder, Value *L, Value *R ) {
 	return Builder.CreateMul(L, R, "multmp");
 }
+
+Value* CreateIfElse ( IRBuilder<> &Builder, BBList List, ValList VL ) {
+	Value *Condtn = VL[0];
+	Value *Arg1 = VL[1];
+	BasicBlock *ThenBB = List[0];
+	BasicBlock *ElseBB = List[1];
+	BasicBlock *MergeBB = List[2];
+	Builder.CreateCondBr(Condtn, ThenBB, ElseBB);
+
+	Builder.SetInsertPoint(ThenBB);
+	Value *ThenVal = Builder.CreateAdd(Arg1, Builder.getInt32(1));
+	Builder.CreateBr(MergeBB);
+
+	Builder.SetInsertPoint(ElseBB);
+	Value *ElseVal = Builder.CreateAdd(Arg1, Builder.getInt32(2));
+	Builder.CreateBr(MergeBB);
+
+	unsigned PhiBBSize = List.size() - 1;
+	Builder.SetInsertPoint(MergeBB);
+	PHINode *Phi = Builder.CreatePHI(Type::getInt32Ty(TheContext), PhiBBSize, "iftmp");
+	Phi->addIncoming(ThenVal, ThenBB);
+	Phi->addIncoming(ElseVal, ElseBB);
+
+	return Phi;
+}
 int main ( int argc, char *argv[] )
 {
 	FunArgs.push_back("a");
@@ -55,13 +82,34 @@ int main ( int argc, char *argv[] )
 	BasicBlock *entry = createBB(fooFunc, "entry");
 	
 	Builder.SetInsertPoint(entry);
-	Value *Arg1 = fooFunc->arg_begin();
-	Value *constant = Builder.getInt32(16);
-	Value *val = createArith(Builder, Arg1, constant);
-	Builder.CreateRet(Builder.getInt32(0));
 	
+	Value *Arg1 = static_cast<Value*>(fooFunc->arg_begin());
+	Value *constant = Builder.getInt32(16);
+	Value *val1 = createArith(Builder, Arg1, constant);
+	Value *val2 = Builder.getInt32(100);
+		
+	Value *Compare = Builder.CreateICmpULT(val1, val2, "cmptmp");
+	//Compare->printAsOperand(outs());
+	Value *Condtn = Builder.CreateICmpNE(Compare, Builder.getInt1(0), "ifcond");
+
+	ValList VL;
+	VL.push_back(Condtn);
+	VL.push_back(Arg1);
+
+	BasicBlock *ThenBB = createBB(fooFunc, "then");
+	BasicBlock *ElseBB = createBB(fooFunc, "else");
+	BasicBlock *MergeBB = createBB(fooFunc, "merge");
+	BBList List;
+	List.push_back(ThenBB);
+	List.push_back(ElseBB);
+	List.push_back(MergeBB);
+
+	Value *v = CreateIfElse(Builder, List, VL);
+
+	Builder.CreateRet(v);
+
 	verifyFunction(*fooFunc);
-	TheModule->print(llvm::outs(), nullptr);
+	TheModule->print(outs(), nullptr);
 	return 0;
 
 }
