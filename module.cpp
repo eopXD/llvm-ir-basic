@@ -37,6 +37,10 @@ GlobalVariable *createGlob ( IRBuilder<> &Builder, std::string Name ) {
 	gvar->setAlignment((MaybeAlign)4);
 	return gvar;
 }
+
+Value* createArith ( IRBuilder<> &Builder, Value *L, Value *R ) {
+	return Builder.CreateMul(L, R, "multmp");
+}
 int main ( int argc, char *argv[] )
 {
 	FunArgs.push_back("a");
@@ -51,6 +55,9 @@ int main ( int argc, char *argv[] )
 	BasicBlock *entry = createBB(fooFunc, "entry");
 	
 	Builder.SetInsertPoint(entry);
+	Value *Arg1 = fooFunc->arg_begin();
+	Value *constant = Builder.getInt32(16);
+	Value *val = createArith(Builder, Arg1, constant);
 	Builder.CreateRet(Builder.getInt32(0));
 	
 	verifyFunction(*fooFunc);
