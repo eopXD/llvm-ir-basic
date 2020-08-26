@@ -5,6 +5,7 @@
 #include "llvm/IR/Verifier.h"
 
 #include <vector>
+#include <string>
 using namespace llvm;
 
 static Module *TheModule;
@@ -18,12 +19,15 @@ Function *createFunc(IRBuilder<> &Builder, std::string Name) {
 	funcType, llvm::Function::ExternalLinkage, Name, TheModule);
 	return fooFunc;
 }
+BasicBlock* createBB ( Function *fooFunc, std::string Name ) {
+	return BasicBlock::Create(TheContext, Name, fooFunc);
+}
 int main ( int argc, char *argv[] )
 {
 	llvm::LLVMContext &Context = TheContext;
 	TheModule = new Module("my compiler", Context);
 	Function *fooFunc = createFunc(Builder, "foo");
-
+	BasicBlock *entry = createBB(fooFunc, "entry");
 	verifyFunction(*fooFunc);
 	TheModule->print(llvm::outs(), nullptr);
 	return 0;
