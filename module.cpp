@@ -16,8 +16,9 @@ typedef SmallVector<BasicBlock*, 16> BBList;
 typedef SmallVector<Value*, 16> ValList;
 
 Function *createFunc(IRBuilder<> &Builder, std::string Name) {
-	std::vector<Type*> Integers(FunArgs.size(), Type::getInt32Ty(TheContext));
-	FunctionType *funcType = FunctionType::get(Builder.getInt32Ty(), Integers, false);
+	Type *vecTy = VectorType::get(Type::getInt32Ty(TheContext), 2);
+	Type *ptrTy = vecTy->getPointerTo(0);
+	FunctionType *funcType = FunctionType::get(Builder.getInt32Ty(), ptrTy, false);
 	Function *fooFunc = Function::Create(
 		funcType, llvm::Function::ExternalLinkage, Name, TheModule);
 	return fooFunc;
@@ -95,6 +96,9 @@ Value* CreateLoop ( IRBuilder<> &Builder, BBList List, ValList VL,
 	IndVar->addIncoming(NextVal, LoopEndBB);
 	return Add;
 }
+Value* getElemPtr ( IRBuilder<> &Builder, Value *Base, Value *Offset ) {
+	return Builder.CreateGEP(Builder.getInt32Ty(), Base, Offset, "a1");
+}
 int main ( int argc, char *argv[] )
 {
 	FunArgs.push_back("a");
@@ -103,7 +107,7 @@ int main ( int argc, char *argv[] )
 	llvm::LLVMContext &Context = TheContext;
 	TheModule = new Module("my compiler", Context);
 	
-	GlobalVariable *gvar = createGlob(Builder, "x");
+	//GlobalVariable *gvar = createGlob(Builder, "x");
 	Function *fooFunc = createFunc(Builder, "foo");
 	setFuncArgs(fooFunc, FunArgs);
 	BasicBlock *entry = createBB(fooFunc, "entry");
@@ -134,7 +138,7 @@ int main ( int argc, char *argv[] )
 	Value *v = CreateIfElse(Builder, List, VL);
 	Builder.CreateRet(v);*/
 
-	Function::arg_iterator AI = fooFunc->arg_begin();
+/*	Function::arg_iterator AI = fooFunc->arg_begin();
 	Value *Arg1 = AI++;
 	Value *Arg2 = AI;
 	Value *constant = Builder.getInt32(16);
@@ -150,7 +154,9 @@ int main ( int argc, char *argv[] )
 
 	Value *StartVal = Builder.getInt32(1);
 	Value *Res = CreateLoop(Builder, List, VL, StartVal, Arg2);
-	Builder.CreateRet(Res);
+	Builder.CreateRet(Res);*/
+	Value *Base = fooFunc->arg_begin();
+	Value *gep = getElemPtr(Builder, Base, Builder.getInt32(1));
 
 	verifyFunction(*fooFunc);
 	TheModule->print(outs(), nullptr);
