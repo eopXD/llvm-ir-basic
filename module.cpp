@@ -110,6 +110,10 @@ Value* getInsertElem ( IRBuilder<> &Builder, Value *Vec, Value *V,
 	return Builder.CreateInsertElement(Vec, V, Idx);
 
 }
+
+Value *getExtractElement ( IRBuilder<> &Builder, Value *Vec, Value *Idx) {
+	return Builder.CreateExtractElement(Vec, Idx);
+}
 int main ( int argc, char *argv[] )
 {
 	FunArgs.push_back("a");
@@ -177,6 +181,10 @@ int main ( int argc, char *argv[] )
 	Value *Vec = fooFunc->arg_begin();
 	for ( int i=0; i<4; ++i ) {
 		Value *V = getInsertElem(Builder, Vec, Builder.getInt32(i), Builder.getInt32(i));
+	}
+
+	for ( int i=0; i<4; ++i ) {
+		Value *V = getExtractElement(Builder, Vec, Builder.getInt32(i));
 	}
 
 	verifyFunction(*fooFunc);
