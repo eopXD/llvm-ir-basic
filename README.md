@@ -1,3 +1,7 @@
+## How to use
+
+Go through the commit to learn LLVM IR.
+
 ## LLVM IR syntax basic
 
 Using LLVM IR C++ API to generate LLVM IR.
@@ -13,11 +17,7 @@ Covered:
 - Pointer manipulation
 - Vector manipulation
 
-## How to use
-
-Go through the commit to learn LLVM IR.
-
-Environment:
+## Environment
 
 ```
 $ lli --version
