@@ -102,6 +102,9 @@ Value* getElemPtr ( IRBuilder<> &Builder, Value *Base, Value *Offset ) {
 Value* getLoad ( IRBuilder<> &Builder, Value *Addr ) {
 	return Builder.CreateLoad(Addr, "load");
 }
+void getStore ( IRBuilder<> &Builder, Value *Addr, Value *V ) {
+	Builder.CreateStore(V, Addr);
+}
 int main ( int argc, char *argv[] )
 {
 	FunArgs.push_back("a");
@@ -161,6 +164,9 @@ int main ( int argc, char *argv[] )
 	Value *Base = fooFunc->arg_begin();
 	Value *gep = getElemPtr(Builder, Base, Builder.getInt32(1));
 	Value *load = getLoad(Builder, gep);
+	Value *constant = Builder.getInt32(16);
+	Value *val = createArith(Builder, load, constant);
+	getStore(Builder, gep, val);
 
 	verifyFunction(*fooFunc);
 	TheModule->print(outs(), nullptr);
