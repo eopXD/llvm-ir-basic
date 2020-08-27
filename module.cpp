@@ -99,6 +99,9 @@ Value* CreateLoop ( IRBuilder<> &Builder, BBList List, ValList VL,
 Value* getElemPtr ( IRBuilder<> &Builder, Value *Base, Value *Offset ) {
 	return Builder.CreateGEP(Builder.getInt32Ty(), Base, Offset, "a1");
 }
+Value* getLoad ( IRBuilder<> &Builder, Value *Addr ) {
+	return Builder.CreateLoad(Addr, "load");
+}
 int main ( int argc, char *argv[] )
 {
 	FunArgs.push_back("a");
@@ -157,6 +160,7 @@ int main ( int argc, char *argv[] )
 	Builder.CreateRet(Res);*/
 	Value *Base = fooFunc->arg_begin();
 	Value *gep = getElemPtr(Builder, Base, Builder.getInt32(1));
+	Value *load = getLoad(Builder, gep);
 
 	verifyFunction(*fooFunc);
 	TheModule->print(outs(), nullptr);
