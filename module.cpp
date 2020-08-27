@@ -16,9 +16,9 @@ typedef SmallVector<BasicBlock*, 16> BBList;
 typedef SmallVector<Value*, 16> ValList;
 
 Function *createFunc(IRBuilder<> &Builder, std::string Name) {
-	Type *vecTy = VectorType::get(Type::getInt32Ty(TheContext), 2);
-	Type *ptrTy = vecTy->getPointerTo(0);
-	FunctionType *funcType = FunctionType::get(Builder.getInt32Ty(), ptrTy, false);
+	Type *vecTy = VectorType::get(Type::getInt32Ty(TheContext), 4);
+	//Type *ptrTy = vecTy->getPointerTo(0);
+	FunctionType *funcType = FunctionType::get(Builder.getInt32Ty(), vecTy, false);
 	Function *fooFunc = Function::Create(
 		funcType, llvm::Function::ExternalLinkage, Name, TheModule);
 	return fooFunc;
@@ -105,6 +105,11 @@ Value* getLoad ( IRBuilder<> &Builder, Value *Addr ) {
 void getStore ( IRBuilder<> &Builder, Value *Addr, Value *V ) {
 	Builder.CreateStore(V, Addr);
 }
+Value* getInsertElem ( IRBuilder<> &Builder, Value *Vec, Value *V, 
+	Value *Idx ) {
+	return Builder.CreateInsertElement(Vec, V, Idx);
+
+}
 int main ( int argc, char *argv[] )
 {
 	FunArgs.push_back("a");
@@ -161,12 +166,18 @@ int main ( int argc, char *argv[] )
 	Value *StartVal = Builder.getInt32(1);
 	Value *Res = CreateLoop(Builder, List, VL, StartVal, Arg2);
 	Builder.CreateRet(Res);*/
-	Value *Base = fooFunc->arg_begin();
+
+/*	Value *Base = fooFunc->arg_begin();
 	Value *gep = getElemPtr(Builder, Base, Builder.getInt32(1));
 	Value *load = getLoad(Builder, gep);
 	Value *constant = Builder.getInt32(16);
 	Value *val = createArith(Builder, load, constant);
-	getStore(Builder, gep, val);
+	getStore(Builder, gep, val);*/
+
+	Value *Vec = fooFunc->arg_begin();
+	for ( int i=0; i<4; ++i ) {
+		Value *V = getInsertElem(Builder, Vec, Builder.getInt32(i), Builder.getInt32(i));
+	}
 
 	verifyFunction(*fooFunc);
 	TheModule->print(outs(), nullptr);
