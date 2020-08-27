@@ -68,6 +68,33 @@ Value* CreateIfElse ( IRBuilder<> &Builder, BBList List, ValList VL ) {
 
 	return Phi;
 }
+
+Value* CreateLoop ( IRBuilder<> &Builder, BBList List, ValList VL,
+	Value *StartVal, Value *EndVal ) {
+	BasicBlock *PreheaderBB = Builder.GetInsertBlock();
+	Value *val = VL[0];
+	BasicBlock *LoopBB = List[0];
+	Builder.CreateBr(LoopBB);
+	Builder.SetInsertPoint(LoopBB);
+
+	PHINode *IndVar = Builder.CreatePHI(Type::getInt32Ty(TheContext), 2, "i");
+	IndVar->addIncoming(StartVal, PreheaderBB);
+	
+	Value *Add = Builder.CreateAdd(val, Builder.getInt32(5), "addtmp");
+	Value *StepVal = Builder.getInt32(1);
+	Value *NextVal = Builder.CreateAdd(IndVar, StepVal, "nextval");
+	Value *EndCond = Builder.CreateICmpULT(IndVar, EndVal, "endcond");
+	EndCond = Builder.CreateICmpNE(EndCond, Builder.getInt1(0), "loopcond");
+	
+	BasicBlock *LoopEndBB = Builder.GetInsertBlock();
+	BasicBlock *AfterBB = List[1];
+	
+	Builder.CreateCondBr(EndCond, LoopBB, AfterBB);
+	Builder.SetInsertPoint(AfterBB);
+	
+	IndVar->addIncoming(NextVal, LoopEndBB);
+	return Add;
+}
 int main ( int argc, char *argv[] )
 {
 	FunArgs.push_back("a");
@@ -83,7 +110,7 @@ int main ( int argc, char *argv[] )
 	
 	Builder.SetInsertPoint(entry);
 	
-	Value *Arg1 = static_cast<Value*>(fooFunc->arg_begin());
+/*	Value *Arg1 = static_cast<Value*>(fooFunc->arg_begin());
 	Value *constant = Builder.getInt32(16);
 	Value *val1 = createArith(Builder, Arg1, constant);
 	Value *val2 = Builder.getInt32(100);
@@ -105,8 +132,25 @@ int main ( int argc, char *argv[] )
 	List.push_back(MergeBB);
 
 	Value *v = CreateIfElse(Builder, List, VL);
+	Builder.CreateRet(v);*/
 
-	Builder.CreateRet(v);
+	Function::arg_iterator AI = fooFunc->arg_begin();
+	Value *Arg1 = AI++;
+	Value *Arg2 = AI;
+	Value *constant = Builder.getInt32(16);
+	Value *val = createArith(Builder, Arg1, constant);
+	ValList VL;
+	VL.push_back(Arg1);
+
+	BBList List;
+	BasicBlock *LoopBB = createBB(fooFunc, "loop");
+	BasicBlock *AfterBB = createBB(fooFunc, "afterloop");
+	List.push_back(LoopBB);
+	List.push_back(AfterBB);
+
+	Value *StartVal = Builder.getInt32(1);
+	Value *Res = CreateLoop(Builder, List, VL, StartVal, Arg2);
+	Builder.CreateRet(Res);
 
 	verifyFunction(*fooFunc);
 	TheModule->print(outs(), nullptr);
